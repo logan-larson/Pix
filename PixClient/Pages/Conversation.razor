@@ -1,0 +1,136 @@
+﻿@using MudBlazor
+@using Newtonsoft
+@using Newtonsoft.Json;
+@using Newtonsoft.Json.Linq;
+@using System.Text;
+
+@inject IJSRuntime JSRuntime
+
+@page "/"
+
+<PageTitle>Conversation</PageTitle>
+
+<MudGrid Justify="Justify.Center">
+    <MudItem xs=12 md="7">
+        <MudPaper Elevation="3">
+            <MudTextField T="string" @bind-Value="@InputBuffer" Variant="Variant.Outlined" Lines="7"></MudTextField>
+        </MudPaper>
+    </MudItem>
+    @foreach (var message in messages.Where(m => m.role != "system").OrderBy(m => m.timestamp))
+    {
+        <MudItem xs="12" md="7" Style="@($"text-align: {(message.role == "user" ? "right" : "left")}")">
+            <MudPaper Elevation="3" Class="pa-4" Style="@($"background-color: {(message.role == "user" ? "#147EFB" : "white")}; display: inline-block;")">
+                <MudText Style="@($"color: {(message.role == "user" ? "white" : "#181818")}; text-align: {(message.role == "user" ? "right" : "left")}")" Typo="Typo.body1">@message.content</MudText>
+            </MudPaper>
+        </MudItem>
+    }
+    <MudItem xs="12" md="7" Class="d-flex justify-content-between gap-2">
+        <MudButton Class="flex-grow-1" Variant="Variant.Filled" Color="Color.Primary" OnClick="NewConversation">New</MudButton>
+        <MudButton Class="flex-grow-1" Variant="Variant.Filled" Color="@(isRunning ? Color.Error : Color.Success)" OnClick="ToggleRecognition">
+            @(isRunning ? "Stop" : "Start")
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    List<Message> messages = new List<Message>();
+
+    bool isRunning = false;
+
+    string InputBuffer = "";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        // Show a modal for the user to set the system
+        // e.g. "You are an assistant."
+        // Also the user can set the Text-to-Speech voice from a dropdown
+        // e.g. "Christopher"
+        messages.Add(new Message() { role = "system", content = "You are an assistant and your responses are brief and conversation-like.", timestamp = DateTime.Now });
+    }
+
+    private void NewConversation()
+    {
+        messages.Clear();
+        messages.Add(new Message() { role = "system", content = "You are an assistant and your responses are brief and conversation-like.", timestamp = DateTime.Now });
+    }
+
+    private async void ToggleRecognition()
+    {
+        isRunning = !isRunning;
+
+        if (isRunning)
+        {
+            var dotNetReference = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("startRecognition", dotNetReference);
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("stopRecognition");
+        }
+    }
+
+    [JSInvokable]
+    public void EraseBuffer()
+    {
+        InputBuffer = "";
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void AppendBuffer(string text)
+    {
+        InputBuffer += text;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async void SendBuffer()
+    {
+        messages.Add(new Message() { role = "user", content = InputBuffer, timestamp = DateTime.Now });
+
+        InputBuffer = "";
+        StateHasChanged();
+
+        var httpClient = new HttpClient();
+        var content = await GetGptResponseAsync(messages, "");
+
+        messages.Add(new Message() { role = "assistant", content = content, timestamp = DateTime.Now });
+
+        StateHasChanged();
+
+        await JSRuntime.InvokeVoidAsync("speakText", content);
+    }
+
+    static async Task<string> GetGptResponseAsync(List<Message> conversation, string gptBearer)
+    {
+        using (HttpClient client = new HttpClient())
+        {
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {gptBearer}");
+
+            var payload = new
+            {
+                model = "gpt-3.5-turbo", // or another model
+                messages = conversation
+            };
+
+            var body = JsonConvert.SerializeObject(payload);
+
+            var response = await client.PostAsync("https://api.openai.com/v1/chat/completions",
+                new StringContent(body, Encoding.UTF8, "application/json"));
+
+            var content = await response.Content.ReadAsStringAsync();
+            var json = JObject.Parse(content);
+            return json["choices"]?.First?["message"]?["content"]?.ToString() ?? "I'm sorry, no response was provided.";
+        }
+    }
+}
+

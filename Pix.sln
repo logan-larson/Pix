@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pix", "PixConsole\Pix.csproj", "{B8960196-B056-46EE-8ECF-6350F5621ADE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PixClient", "PixClient\PixClient.csproj", "{A8EB2BF4-1906-437F-A0A6-B5B2BE31C4EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B8960196-B056-46EE-8ECF-6350F5621ADE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8960196-B056-46EE-8ECF-6350F5621ADE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8960196-B056-46EE-8ECF-6350F5621ADE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8EB2BF4-1906-437F-A0A6-B5B2BE31C4EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8EB2BF4-1906-437F-A0A6-B5B2BE31C4EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8EB2BF4-1906-437F-A0A6-B5B2BE31C4EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8EB2BF4-1906-437F-A0A6-B5B2BE31C4EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
